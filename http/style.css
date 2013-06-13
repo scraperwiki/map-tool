@@ -41,15 +41,25 @@ body {
 
 .alert {
   position: absolute;
-  top: 12px;
-  left: 51px;
+  bottom: 12px;
+  left: 12px;
   right: 12px;
   z-index: 2000;
   -webkit-box-shadow:  0px 1px 5px rgba(0, 0, 0, 0.3);
   box-shadow:  0px 1px 5px rgba(0, 0, 0, 0.3);
   border-color: #BBB09A;
+  margin: 0;
 }
 
 .alert-error {
   border-color: #BD9FA3;
+}
+
+#feedback {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2000;
+  -webkit-box-shadow:  0px 1px 5px rgba(0, 0, 0, 0.3);
+  box-shadow:  0px 1px 5px rgba(0, 0, 0, 0.3);
 }
