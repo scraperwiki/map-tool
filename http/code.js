@@ -6,6 +6,7 @@ String.prototype.endsWith = function (str){
   return this.slice(-str.length) == str
 }
 
+
 function detectColumns(){
   scraperwiki.sql.meta(function(meta){
     if(meta.table.length == 0){
@@ -37,32 +38,8 @@ function detectColumns(){
       }
     })
     if(bestTable && bestLatColumn && bestLngColumn){
-      console.log(bestLatColumn, bestLngColumn)
       scraperwiki.sql('select * from "'+ bestTable +'"', function(data){
-        $('#loading').empty().fadeOut()
-        $('#overlay').fadeOut()
-        var bounds = []
-        $.each(data, function(i, point){
-          if(point[bestLatColumn] != null && point[bestLngColumn] != null){
-            var latLng = [ point[bestLatColumn], point[bestLngColumn] ]
-            var popupContent = '<table class="table table-striped">'
-            $.each(point, function(key, value){
-              if(typeof(value) == 'string'){
-                if(value.startsWith('http')){
-                  value = '<a target="_blank" href="' + value + '">' + value.replace(new RegExp('(https?://.{40}).+'), '$1&hellip;') + '</a>'
-                } else if(value.length > 200){
-                  value = value.slice(0, 199) + '&hellip;'
-                }
-              }
-              popupContent += '<tr><th>' + key + '</th><td>' + value + '</td></tr>'
-            })
-            popupContent += '</table>'
-            L.marker(latLng).bindPopup(popupContent, {maxWidth: 450}).addTo(map)
-            bounds.push(latLng)
-          }
-        })
-        map.fitBounds(bounds)
-        return true
+        plotDataOnMap(data, bestLatColumn, bestLngColumn)
       }, function(){
         $('#loading, #overlay').fadeOut()
         scraperwiki.alert('An unexpected error occurred', 'scraperwiki.sql() failed', 1)
@@ -91,6 +68,34 @@ function findLatLngColumns(list){
   } else {
     return []
   }
+}
+
+
+function plotDataOnMap(data, latColumnName, lngColumnName){
+  $('#loading').empty().fadeOut()
+  $('#overlay').fadeOut()
+  var bounds = []
+  $.each(data, function(i, point){
+    if(point[latColumnName] != null && point[lngColumnName] != null){
+      var latLng = [ point[latColumnName], point[lngColumnName] ]
+      var popupContent = '<table class="table table-striped">'
+      $.each(point, function(key, value){
+        if(typeof(value) == 'string'){
+          if(value.startsWith('http')){
+            value = '<a target="_blank" href="' + value + '">' + value.replace(new RegExp('(https?://.{40}).+'), '$1&hellip;') + '</a>'
+          } else if(value.length > 200){
+            value = value.slice(0, 199) + '&hellip;'
+          }
+        }
+        popupContent += '<tr><th>' + key + '</th><td>' + value + '</td></tr>'
+      })
+      popupContent += '</table>'
+      L.marker(latLng).bindPopup(popupContent, {maxWidth: 450}).addTo(map)
+      bounds.push(latLng)
+    }
+  })
+  map.fitBounds(bounds)
+  return true
 }
 
 
