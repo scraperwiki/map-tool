@@ -57,7 +57,7 @@ function detectColumns(){
               popupContent += '<tr><th>' + key + '</th><td>' + value + '</td></tr>'
             })
             popupContent += '</table>'
-            L.marker(latLng).bindPopup(popupContent, {maxWidth: 500}).addTo(map)
+            L.marker(latLng).bindPopup(popupContent, {maxWidth: 450}).addTo(map)
             bounds.push(latLng)
           }
         })

@@ -68,6 +68,11 @@ body {
   margin: 0;
 }
 
+.table td, .table th {
+  font-size: 12px;
+  line-height: 18px;
+}
+
 .table tr:first-child td,
 .table tr:first-child th {
   border-top: none;
