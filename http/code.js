@@ -46,8 +46,8 @@ function detectColumns(){
         return false
       })
     } else {
-      $('#loading, #overlay').fadeOut()
-      scraperwiki.alert('Could not find geo information', 'Are you sure your dataset contains latitude and longitude information?')
+      $('#loading').hide()
+      showPicker(meta)
     }
   }, function(){
     $('#loading, #overlay').fadeOut()
@@ -73,11 +73,13 @@ function findLatLngColumns(list){
 
 function plotDataOnMap(data, latColumnName, lngColumnName){
   $('#loading').empty().fadeOut()
-  $('#overlay').fadeOut()
+  $('#overlay, #picker').fadeOut()
   var bounds = []
   $.each(data, function(i, point){
-    if(point[latColumnName] != null && point[lngColumnName] != null){
-      var latLng = [ point[latColumnName], point[lngColumnName] ]
+    var lat = point[latColumnName]
+    var lng = point[lngColumnName]
+    if(typeof(lat) == 'number' && typeof(lng) == 'number'){
+      var latLng = [ lat, lng ]
       var popupContent = '<table class="table table-striped">'
       $.each(point, function(key, value){
         if(typeof(value) == 'string'){
@@ -94,8 +96,55 @@ function plotDataOnMap(data, latColumnName, lngColumnName){
       bounds.push(latLng)
     }
   })
-  map.fitBounds(bounds)
+  if(bounds.length){
+    map.fitBounds(bounds)
+  } else {
+    scraperwiki.alert('Data could not be geocoded', 'Are you sure the selected Latitude and Longitude columns are numeric?', 1)
+  }
   return true
+}
+
+
+function showPicker(meta){
+  var $picker = $('<div id="picker">').insertBefore('#overlay')
+  $picker.append('<h1>Hmm. I couldn&rsquo;t find any geo data</h1>')
+  $picker.append('<p>Could you give me a hand and point out the right columns?</p>')
+  var $select = $('<select>')
+  $.each(meta.table, function(tableName, tableInfo){
+    if(!tableName.startsWith('_')){
+      var $optgroup = $('<optgroup>').attr('label', tableName)
+      $.each(tableInfo.columnNames, function(i, columnName){
+        if(!columnName.startsWith('_')){
+          $('<option>').text(columnName).val(columnName).appendTo($optgroup)
+        }
+      })
+      $optgroup.appendTo($select)
+    }
+  })
+  $('<p>').append('<label for="latPicker">Latitude:</label>').append($select.clone().attr('id', 'latPicker')).appendTo($picker)
+  $('<p>').append('<label for="lngPicker">Longitude:</label>').append($select.clone().attr('id', 'lngPicker')).appendTo($picker)
+  $('<p>').append(
+    $('<button>').text('Make it so!').addClass('btn btn-primary').on('click', function(){
+      var latColumn = $('#latPicker option:selected').val()
+      var latTable = $('#latPicker option:selected').parent().attr('label')
+      var lngColumn = $('#lngPicker option:selected').val()
+      var lngTable = $('#lngPicker option:selected').parent().attr('label')
+      if(latTable != lngTable){
+        $('#picker p').eq(0).addClass('text-error').html('Oops. Those two columns aren&rsquo;t in the same table. Try again.')
+      } else if(latColumn == lngColumn) {
+        $('#picker p').eq(0).addClass('text-error').html('Oops. You picked the same column twice. Try again.')
+      } else {
+        $(this).addClass('loading').text('Plotting map\u2026')
+        scraperwiki.sql('select * from "'+ latTable +'"', function(data){
+          plotDataOnMap(data, latColumn, lngColumn)
+        }, function(){
+          $('#picker, #overlay').fadeOut()
+          scraperwiki.alert('An unexpected error occurred', 'scraperwiki.sql() failed', 1)
+          return false
+        })
+      }
+    })
+  ).appendTo($picker)
 }
 
 
