@@ -34,7 +34,7 @@ function detectColumns(){
         bestLatColumn = latLngColumns[0]
         bestLngColumn = latLngColumns[1]
       } else {
-        return false
+        return true
       }
     })
     if(bestTable && bestLatColumn && bestLngColumn){
