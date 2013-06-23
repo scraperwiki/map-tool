@@ -7,6 +7,28 @@ String.prototype.endsWith = function (str){
 }
 
 
+function sqlEscape(str, literal) {
+  if(literal){
+    quote = "'" // set literal to true for strings you're inserting into a table
+    singleQuote = "''"
+    doubleQuote = '"'
+  } else {
+    quote = '"' // set literal to false for column and table names
+    singleQuote = "'"
+    doubleQuote = '""'
+  }
+  if(str === '' || str === null){
+    return 'NULL'
+  } else if(isNaN(str)){
+    str = str.replace(/[']/g, singleQuote)
+    str = str.replace(/["]/g, doubleQuote)
+    return quote + str + quote
+  } else {
+    return str
+  }
+}
+
+
 function detectColumns(){
   scraperwiki.sql.meta(function(meta){
     if(meta.table.length == 0){
