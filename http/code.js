@@ -119,7 +119,7 @@ function plotDataOnMap(data, latColumnName, lngColumnName){
       $.each(point, function(key, value){
         if(typeof(value) == 'string'){
           if(value.startsWith('http')){
-            value = '<a target="_blank" href="' + value + '">' + value.replace(new RegExp('(https?://.{40}).+'), '$1&hellip;') + '</a>'
+            value = '<a target="_blank" href="' + value + '">' + value.replace(new RegExp('(https?://.{30}).+'), '$1&hellip;') + '</a>'
           } else if(value.length > 200){
             value = value.slice(0, 199) + '&hellip;'
           }
