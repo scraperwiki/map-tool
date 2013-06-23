@@ -6,6 +6,18 @@ String.prototype.endsWith = function (str){
   return this.slice(-str.length) == str
 }
 
+Array.prototype.toLowerCase = function(){
+  newArray = []
+  for(var i=0; i<this.length; i++) {
+    if(this[i].toLowerCase){
+      newArray.push(this[i].toLowerCase())
+    } else {
+      newArray.push(this[i])
+    }
+  }
+  return newArray
+}
+
 
 function sqlEscape(str, literal) {
   if(literal){
@@ -79,14 +91,15 @@ function detectColumns(){
 
 
 function findLatLngColumns(list){
-  if($.inArray('lat', list) > -1 && $.inArray('lng', list) > -1){
-    return ['lat', 'lng']
-  } else if($.inArray('lat', list) > -1 && $.inArray('long', list) > -1){
-    return ['lat', 'long']
-  } else if($.inArray('lat', list) > -1 && $.inArray('lon', list) > -1){
-    return ['lat', 'lon']
-  } else if($.inArray('latitude', list) > -1 && $.inArray('longitude', list) > -1){
-    return ['latitude', 'longitude']
+  m = list.toLowerCase()
+  if(m.indexOf('lat') > -1 && m.indexOf('lng') > -1){
+    return [ list[m.indexOf('lat')], list[m.indexOf('lng')] ]
+  } else if(m.indexOf('lat') > -1 && m.indexOf('long') > -1){
+    return [ list[m.indexOf('lat')], list[m.indexOf('long')] ]
+  } else if(m.indexOf('lat') > -1 && m.indexOf('lon') > -1){
+    return [ list[m.indexOf('lat')], list[m.indexOf('lon')] ]
+  } else if(m.indexOf('latitude') > -1 && m.indexOf('longitude') > -1){
+    return [ list[m.indexOf('latitude')], list[m.indexOf('longitude')] ]
   } else {
     return []
   }
