@@ -60,7 +60,7 @@ function detectColumns(){
       }
     })
     if(bestTable && bestLatColumn && bestLngColumn){
-      scraperwiki.sql('select * from "'+ bestTable +'"', function(data){
+      scraperwiki.sql('SELECT * FROM '+ sqlEscape(bestTable) +' WHERE '+ sqlEscape(bestLatColumn) +' IS NOT NULL AND '+ sqlEscape(bestLngColumn) +' IS NOT NULL', function(data){
         plotDataOnMap(data, bestLatColumn, bestLngColumn)
       }, function(){
         $('#loading, #overlay').fadeOut()
