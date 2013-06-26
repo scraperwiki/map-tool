@@ -73,7 +73,8 @@ function detectColumns(){
     })
     if(bestTable && bestLatColumn && bestLngColumn){
       scraperwiki.sql('SELECT * FROM '+ sqlEscape(bestTable) +' WHERE '+ sqlEscape(bestLatColumn) +' IS NOT NULL AND '+ sqlEscape(bestLngColumn) +' IS NOT NULL', function(data){
-        plotDataOnMap(data, bestLatColumn, bestLngColumn)
+        plotDataOnMap(data,
+          {latColumnName: bestLatColumn, lngColumnName: bestLngColumn})
       }, function(){
         $('#loading, #overlay').fadeOut()
         scraperwiki.alert('An unexpected error occurred', 'scraperwiki.sql() failed', 1)
@@ -106,13 +107,17 @@ function findLatLngColumns(list){
 }
 
 
-function plotDataOnMap(data, latColumnName, lngColumnName){
+// Required: option.latColumnName, option.lngColumnName
+// Optional: option.clrColumnName
+function plotDataOnMap(data, option){
+  option = option || {}
+  option.clrColumnName = option.clrColumnName || 'colour'
   $('#loading').empty().fadeOut()
   $('#overlay, #picker').fadeOut()
   var bounds = []
   $.each(data, function(i, point){
-    var lat = point[latColumnName]
-    var lng = point[lngColumnName]
+    var lat = point[option.latColumnName]
+    var lng = point[option.lngColumnName]
     if(typeof(lat) == 'number' && typeof(lng) == 'number'){
       var latLng = [ lat, lng ]
       var popupContent = '<table class="table table-striped">'
@@ -127,7 +132,17 @@ function plotDataOnMap(data, latColumnName, lngColumnName){
         popupContent += '<tr><th>' + key + '</th><td>' + value + '</td></tr>'
       })
       popupContent += '</table>'
-      L.marker(latLng).bindPopup(popupContent, {maxWidth: 450}).addTo(map)
+      var opt = {}
+      var clr = point[option.clrColumnName]
+      if(/[0-9a-f]{6}/i.test(clr)) {
+        opt.icon = L.icon({
+          iconUrl: 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|' + clr,
+          iconAnchor: [11, 34]
+        })
+      }
+      var m = L.marker(latLng, opt)
+        .bindPopup(popupContent, {maxWidth: 450})
+      m.addTo(map)
       bounds.push(latLng)
     }
   })
@@ -171,7 +186,8 @@ function showPicker(meta){
       } else {
         $(this).addClass('loading').text('Plotting map\u2026')
         scraperwiki.sql('select * from "'+ latTable +'"', function(data){
-          plotDataOnMap(data, latColumn, lngColumn)
+          plotDataOnMap(data,
+            {latColumnName: latColumn, lngColumnName: lngColumn})
         }, function(){
           $('#picker, #overlay').fadeOut()
           scraperwiki.alert('An unexpected error occurred', 'scraperwiki.sql() failed', 1)
