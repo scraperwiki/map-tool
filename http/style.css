@@ -128,3 +128,7 @@ body {
 .leaflet-container a.leaflet-popup-close-button {
   padding: 8px 6px 0 0;
 }
+
+.leaflet-container tr:first-child td:last-child {
+  padding-right: 30px;
+}
