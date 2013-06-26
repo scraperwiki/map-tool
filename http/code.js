@@ -140,9 +140,7 @@ function plotDataOnMap(data, option){
           iconAnchor: [11, 34]
         })
       }
-      var m = L.marker(latLng, opt)
-        .bindPopup(popupContent, {maxWidth: 450})
-      m.addTo(map)
+      L.marker(latLng, opt).bindPopup(popupContent, {maxWidth: 450}).addTo(map)
       bounds.push(latLng)
     }
   })
