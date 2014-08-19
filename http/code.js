@@ -115,6 +115,7 @@ function plotDataOnMap(data, option){
   $('#loading').empty().fadeOut()
   $('#overlay, #picker').fadeOut()
   var bounds = []
+  var group = L.markerClusterGroup({"maxClusterRadius": 17})
   $.each(data, function(i, point){
     var lat = point[option.latColumnName]
     var lng = point[option.lngColumnName]
@@ -122,9 +123,11 @@ function plotDataOnMap(data, option){
       var latLng = [ lat, lng ]
       var popupContent = '<table class="table table-striped">'
       $.each(point, function(key, value){
-        if(typeof(value) == 'string'){
+        if(typeof(value) == 'string') {
           if(value.startsWith('http')){
-            value = '<a target="_blank" href="' + value + '">' + value.replace(new RegExp('(https?://.{30}).+'), '$1&hellip;') + '</a>'
+            value = '<a target="_blank" href="' + value + '">' +
+              value.replace(new RegExp('(https?://.{30}).+'), '$1&hellip;')
+              + '</a>'
           } else if(value.length > 200){
             value = value.slice(0, 199) + '&hellip;'
           }
@@ -140,11 +143,13 @@ function plotDataOnMap(data, option){
           iconAnchor: [11, 34]
         })
       }
-      L.marker(latLng, opt).bindPopup(popupContent, {maxWidth: 450}).addTo(map)
+      L.marker(latLng, opt).bindPopup(popupContent, {maxWidth: 450})
+        .addTo(group)
       bounds.push(latLng)
     }
   })
   if(bounds.length){
+    map.addLayer(group)
     map.fitBounds(bounds)
   } else {
     scraperwiki.alert('Data could not be geocoded', 'Are you sure the selected Latitude and Longitude columns are numeric?', 1)
