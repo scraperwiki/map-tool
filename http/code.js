@@ -115,7 +115,7 @@ function plotDataOnMap(data, option){
   $('#loading').empty().fadeOut()
   $('#overlay, #picker').fadeOut()
   var bounds = []
-  var group = L.markerClusterGroup()
+  var group = L.markerClusterGroup({"maxClusterRadius": 17})
   $.each(data, function(i, point){
     var lat = point[option.latColumnName]
     var lng = point[option.lngColumnName]
