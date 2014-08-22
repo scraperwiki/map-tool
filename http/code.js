@@ -116,9 +116,30 @@ function plotDataOnMap(data, option){
   $('#overlay, #picker').fadeOut()
   var bounds = []
   var group = L.markerClusterGroup({"maxClusterRadius": 17})
+  var cfg = {
+  // radius should be small ONLY if scaleRadius is true (or small radius is intended)
+  // if scaleRadius is false it will be the constant radius used in pixels
+  "radius": 10,
+  "maxOpacity": .8, 
+  // scales the radius based on map zoom
+  "scaleRadius": false, 
+  // if set to false the heatmap uses the global maximum for colorization
+  // if activated: uses the data maximum within the current map boundaries 
+  //   (there will always be a red spot with useLocalExtremas true)
+  "useLocalExtrema": true,
+  // which field name in your data represents the latitude - default "lat"
+  latField: 'lat',
+  // which field name in your data represents the longitude - default "lng"
+  lngField: 'lng',
+  // which field name in your data represents the data value - default "value"
+  valueField: 'count'
+  };
+  var heatmapLayer = new HeatmapOverlay(cfg);
+  var heatmap_points = [];
   $.each(data, function(i, point){
     var lat = point[option.latColumnName]
     var lng = point[option.lngColumnName]
+
     if(typeof(lat) == 'number' && typeof(lng) == 'number'){
       var latLng = [ lat, lng ]
       var popupContent = '<table class="table table-striped">'
@@ -145,11 +166,17 @@ function plotDataOnMap(data, option){
       }
       L.marker(latLng, opt).bindPopup(popupContent, {maxWidth: 450})
         .addTo(group)
+      //L.marker({lat: lat, lng: lng, count: 1}).addTo(heatmapLayer)
+      heatmap_points.push({lat: lat, lng: lng, count: 1})
       bounds.push(latLng)
     }
   })
   if(bounds.length){
-    map.addLayer(group)
+    //map.addLayer(group)
+    map.addLayer(heatmapLayer)
+    //console.log ( 'We got here fine' + heatmap_points.length)
+    heatmapLayer.setData({max:8, data: heatmap_points})
+    
     map.fitBounds(bounds)
   } else {
     scraperwiki.alert('Data could not be geocoded', 'Are you sure the selected Latitude and Longitude columns are numeric?', 1)
