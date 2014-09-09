@@ -71,15 +71,8 @@ function detectColumns(){
         return true
       }
     })
-    if(bestTable && bestLatColumn && bestLngColumn){
-      scraperwiki.sql('SELECT * FROM '+ sqlEscape(bestTable) +' WHERE '+ sqlEscape(bestLatColumn) +' IS NOT NULL AND '+ sqlEscape(bestLngColumn) +' IS NOT NULL', function(data){
-        plotDataOnMap(data,
-          {latColumnName: bestLatColumn, lngColumnName: bestLngColumn})
-      }, function(){
-        $('#loading, #overlay').fadeOut()
-        scraperwiki.alert('An unexpected error occurred', 'scraperwiki.sql() failed', 1)
-        return false
-      })
+    if(bestTable && bestLatColumn && bestLngColumn) {
+      showPoints(bestTable, bestLatColumn, bestLngColumn)
     } else {
       $('#loading').hide()
       showPicker(meta)
@@ -87,6 +80,20 @@ function detectColumns(){
   }, function(){
     $('#loading, #overlay').fadeOut()
     scraperwiki.alert('An unexpected error occurred', 'scraperwiki.sql.meta() failed', 1)
+  })
+}
+
+// Fetch point data from table, and show it.
+function showPoints(table, latitudeColumn, longitudeColumn) {
+  scraperwiki.sql('SELECT * FROM '+ sqlEscape(table) +
+    ' WHERE '+ sqlEscape(latitudeColumn) + ' IS NOT NULL AND ' +
+    sqlEscape(longitudeColumn) + ' IS NOT NULL', function(data){
+    plotDataOnMap(data,
+      {latColumnName: latitudeColumn, lngColumnName: longitudeColumn})
+  }, function(){
+    $('#loading, #overlay').fadeOut()
+    scraperwiki.alert('An unexpected error occurred', 'scraperwiki.sql() failed', 1)
+    return false
   })
 }
 
