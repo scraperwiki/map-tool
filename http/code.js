@@ -123,9 +123,12 @@ function plotPolygonsOnMap(data, geoTable) {
   }
   // The polygons, each one as a list of [lat,lon] pairs.
   var asPoints = _.map(polys, convertPoly1)
+  var bounds = _.flatten(asPoints, true)
+
   _.each(asPoints, function(p) {
     var leaflet_polygon = L.polygon(p)
     map.addLayer(leaflet_polygon)
+    map.fitBounds(bounds)
   })
 }
 
