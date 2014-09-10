@@ -50,10 +50,8 @@ function detectColumns(){
     }
 
     $('#loading').html('<img src="img/loader-666-fff.gif" width="16" height="16"> Detecting geo data')
-    var bestTable = null
-    var bestLatColumn = null
-    var bestLngColumn = null
     
+    bestGeoTable = null
     $.each(meta.table, function(tableName, tableInfo){
       if(tableName.startsWith('_')){ return true }
       var columnsInThisTable = []
@@ -62,17 +60,21 @@ function detectColumns(){
           columnsInThisTable.push(columnName)
         }
       })
-      var latLngColumns = findLatLngColumns(columnsInThisTable)
-      if(latLngColumns.length){
-        bestTable = tableName
-        bestLatColumn = latLngColumns[0]
-        bestLngColumn = latLngColumns[1]
+      var geoTable = findGeoTable(columnsInThisTable)
+      if(geoTable) {
+        geoTable.name = tableName
+        bestGeoTable = geoTable
       } else {
         return true
       }
     })
-    if(bestTable && bestLatColumn && bestLngColumn) {
-      showPoints(bestTable, bestLatColumn, bestLngColumn)
+
+    if(bestGeoTable) {
+      if(bestGeoTable.geometry == "Point") {
+        showPoints(bestGeoTable)
+      } else if(bestGeoTable.geometry == "Polygon") {
+        showPolygons(bestGeoTable)
+      }
     } else {
       $('#loading').hide()
       showPicker(meta)
@@ -84,7 +86,10 @@ function detectColumns(){
 }
 
 // Fetch point data from table, and show it.
-function showPoints(table, latitudeColumn, longitudeColumn) {
+function showPoints(geoTable) {
+  var table = geoTable.name
+  var latitudeColumn = geoTable.latitudeColumn
+  var longitudeColumn = geoTable.longitudeColumn
   scraperwiki.sql('SELECT * FROM '+ sqlEscape(table) +
     ' WHERE '+ sqlEscape(latitudeColumn) + ' IS NOT NULL AND ' +
     sqlEscape(longitudeColumn) + ' IS NOT NULL', function(data){
@@ -97,20 +102,116 @@ function showPoints(table, latitudeColumn, longitudeColumn) {
   })
 }
 
+// Fetch polygon data from table, and show it.
+function showPolygons(geoTable) {
+  var table = geoTable.name
+  var latitudeColumn = geoTable.latitudeColumn
+  var longitudeColumn = geoTable.longitudeColumn
+  var uniqueKey = geoTable.polygonColumns
+  var pointColumn = geoTable.pointColumn
+  var allColumns = [
+    latitudeColumn,
+    longitudeColumn,
+    pointColumn
+    ] + uniqueKey
+  // The text for the WHERE part of the SQL query, which is a
+  // load of "IS NOT NULL".
+  var isNotNulls = $.map(allColumns, function(col, i) {
+    return sqlEscape(col) + ' IS NOT NULL'}).join(" AND ")
+  // The text for the ORDER BY part of the SQL query.
+  var orderBys = $.map(uniqueKey + [pointColumn], function(col, i) {
+    return sqlEscape(col)}).join(", ")
 
-function findLatLngColumns(list){
-  m = list.toLowerCase()
-  if(m.indexOf('lat') > -1 && m.indexOf('lng') > -1){
-    return [ list[m.indexOf('lat')], list[m.indexOf('lng')] ]
-  } else if(m.indexOf('lat') > -1 && m.indexOf('long') > -1){
-    return [ list[m.indexOf('lat')], list[m.indexOf('long')] ]
-  } else if(m.indexOf('lat') > -1 && m.indexOf('lon') > -1){
-    return [ list[m.indexOf('lat')], list[m.indexOf('lon')] ]
-  } else if(m.indexOf('latitude') > -1 && m.indexOf('longitude') > -1){
-    return [ list[m.indexOf('latitude')], list[m.indexOf('longitude')] ]
-  } else {
-    return []
+  var gotPolys = function(data) {
+    $('#loading').empty().fadeOut()
+    $('#overlay, #picker').fadeOut()
+    // :todo:(drj) this should not bake in the names
+    // of the unique columns
+    var polys = _.values(_.groupBy(data, function(row) {
+        return String([row.feature_index, row.polygon_index])
+      }))
+    console.log("polys", polys)
+    var convertPoly1 = function(l) {
+      // Convert a single polygon (which is a list), to
+      // a list of [lat,lon] pairs.
+      return _.map(l, function(row) {
+        return [row[latitudeColumn], row[longitudeColumn]]
+      })
+    }
+    // The polygons, each one as a list of [lat,lon] pairs.
+    var asPoints = _.map(polys, convertPoly1)
+    _.each(asPoints, function(p) {
+      var leaflet_polygon = L.polygon(p)
+      map.addLayer(leaflet_polygon)
+    })
   }
+  var gotError = function(){
+    $('#loading, #overlay').fadeOut()
+    scraperwiki.alert('An unexpected error occurred', 'scraperwiki.sql() failed', 1)
+    return false
+  }
+  scraperwiki.sql('SELECT * FROM ' + sqlEscape(table) +
+    ' WHERE ' + isNotNulls +
+    ' ORDER BY ' + orderBys, gotPolys, gotError)
+}
+
+
+// Given a list of column names, return a struct describing the
+// GeoData nature of the table. If the table does not contain
+// GeoData then null is returned. But if the table does
+// contain GeoData then a struct t is returned where
+// t.geometry is "Point" if the table contains points, and
+//   "Polygon" if the table contains polygons.
+// t.latitudeColumn is the name of the column containing latitudes.
+// t.longitudeColumn is the name of the column containing longitudes.
+// t.polygonColumns is a list of names that uniquely identify a
+//   polygon (for example, ['feature_index', 'polygon_index']
+//   for GeoJSON derived multipolygon geometries).
+// t.pointColumn is the name of the column containing the point index.
+// The last 2 properties are only present when t.geometry is "Polygon".
+function findGeoTable(columns){
+  var result = {}
+  var l = columns.toLowerCase()
+  var poly, feat, point
+
+  poly = l.indexOf('polygon_index')
+  feat = l.indexOf('feature_index')
+  point = l.indexOf('point_index')
+  if(poly > -1 && feat > -1 && point > -1) {
+    result.geometry = "Polygon"
+    result.polygonColumns = [columns[feat], columns[poly]]
+    result.pointColumn = columns[point]
+  }
+
+  // The index of the column that might be a latitude.
+  var lat
+  lat = l.indexOf('latitude')
+  if(lat < 0) {
+    lat = l.indexOf('lat')
+  }
+  // The index of the column that might be a longitude.
+  var lon
+  lon = l.indexOf('longitude')
+  if(lon < 0) {
+    lon = l.indexOf('long')
+  }
+  if(lon < 0) {
+    lon = l.indexOf('lon')
+  }
+  if(lon < 0) {
+    lon = l.indexOf('lng')
+  }
+
+  if(lat < 0 || lon < 0) {
+    return null
+  }
+
+  result.latitudeColumn = columns[lat]
+  result.longitudeColumn = columns[lon]
+  if(!result.geometry) {
+    result.geometry = "Point"
+  }
+  return result
 }
 
 
