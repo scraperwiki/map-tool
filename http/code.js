@@ -102,7 +102,7 @@ function showPoints(geoTable) {
   })
 }
 
-function showPolygonsOnMap(geoTable, data) {
+function plotPolygonsOnMap(data, geoTable) {
   $('#loading').empty().fadeOut()
   $('#overlay, #picker').fadeOut()
   // :todo:(drj) this should not bake in the names
@@ -152,7 +152,7 @@ function showPolygons(geoTable) {
     ' WHERE ' + isNotNulls +
     ' ORDER BY ' + orderBys,
     function(data) {
-      return showPolygonsOnMap(geoTable, data)},
+      return plotPolygonsOnMap(data, geoTable)},
     gotError)
 }
 
