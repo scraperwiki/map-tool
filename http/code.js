@@ -110,7 +110,7 @@ function showPolygonsOnMap(geoTable, data) {
   var polys = _.values(_.groupBy(data, function(row) {
       return String([row.feature_index, row.polygon_index])
     }))
-  console.log("polys", polys)
+
   var convertPoly1 = function(l) {
     // Convert a single polygon (which is a list), to
     // a list of [lat,lon] pairs.
