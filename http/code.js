@@ -93,7 +93,7 @@ function showPoints(geoTable) {
   scraperwiki.sql('SELECT * FROM '+ sqlEscape(table) +
     ' WHERE '+ sqlEscape(latitudeColumn) + ' IS NOT NULL AND ' +
     sqlEscape(longitudeColumn) + ' IS NOT NULL', function(data){
-    plotDataOnMap(data,
+    plotPointsOnMap(data,
       {latColumnName: latitudeColumn, lngColumnName: longitudeColumn})
   }, function(){
     $('#loading, #overlay').fadeOut()
@@ -218,7 +218,7 @@ function findGeoTable(columns){
 
 // Required: option.latColumnName, option.lngColumnName
 // Optional: option.clrColumnName
-function plotDataOnMap(data, option){
+function plotPointsOnMap(data, option){
   option = option || {}
   option.clrColumnName = option.clrColumnName || 'colour'
   $('#loading').empty().fadeOut()
@@ -298,7 +298,7 @@ function showPicker(meta){
       } else {
         $(this).addClass('loading').text('Plotting map\u2026')
         scraperwiki.sql('select * from "'+ latTable +'"', function(data){
-          plotDataOnMap(data,
+          plotPointsOnMap(data,
             {latColumnName: latColumn, lngColumnName: lngColumn})
         }, function(){
           $('#picker, #overlay').fadeOut()
