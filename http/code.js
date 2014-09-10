@@ -102,16 +102,38 @@ function showPoints(geoTable) {
   })
 }
 
+function showPolygonsOnMap(geoTable, data) {
+  $('#loading').empty().fadeOut()
+  $('#overlay, #picker').fadeOut()
+  // :todo:(drj) this should not bake in the names
+  // of the unique columns
+  var polys = _.values(_.groupBy(data, function(row) {
+      return String([row.feature_index, row.polygon_index])
+    }))
+  console.log("polys", polys)
+  var convertPoly1 = function(l) {
+    // Convert a single polygon (which is a list), to
+    // a list of [lat,lon] pairs.
+    return _.map(l, function(row) {
+      return [row[geoTable.latitudeColumn], row[geoTable.longitudeColumn]]
+    })
+  }
+  // The polygons, each one as a list of [lat,lon] pairs.
+  var asPoints = _.map(polys, convertPoly1)
+  _.each(asPoints, function(p) {
+    var leaflet_polygon = L.polygon(p)
+    map.addLayer(leaflet_polygon)
+  })
+}
+
 // Fetch polygon data from table, and show it.
 function showPolygons(geoTable) {
   var table = geoTable.name
-  var latitudeColumn = geoTable.latitudeColumn
-  var longitudeColumn = geoTable.longitudeColumn
   var uniqueKey = geoTable.polygonColumns
   var pointColumn = geoTable.pointColumn
   var allColumns = [
-    latitudeColumn,
-    longitudeColumn,
+    geoTable.latitudeColumn,
+    geoTable.longitudeColumn,
     pointColumn
     ] + uniqueKey
   // The text for the WHERE part of the SQL query, which is a
@@ -119,32 +141,8 @@ function showPolygons(geoTable) {
   var isNotNulls = $.map(allColumns, function(col, i) {
     return sqlEscape(col) + ' IS NOT NULL'}).join(" AND ")
   // The text for the ORDER BY part of the SQL query.
-  var orderBys = $.map(uniqueKey + [pointColumn], function(col, i) {
-    return sqlEscape(col)}).join(", ")
-
-  var gotPolys = function(data) {
-    $('#loading').empty().fadeOut()
-    $('#overlay, #picker').fadeOut()
-    // :todo:(drj) this should not bake in the names
-    // of the unique columns
-    var polys = _.values(_.groupBy(data, function(row) {
-        return String([row.feature_index, row.polygon_index])
-      }))
-    console.log("polys", polys)
-    var convertPoly1 = function(l) {
-      // Convert a single polygon (which is a list), to
-      // a list of [lat,lon] pairs.
-      return _.map(l, function(row) {
-        return [row[latitudeColumn], row[longitudeColumn]]
-      })
-    }
-    // The polygons, each one as a list of [lat,lon] pairs.
-    var asPoints = _.map(polys, convertPoly1)
-    _.each(asPoints, function(p) {
-      var leaflet_polygon = L.polygon(p)
-      map.addLayer(leaflet_polygon)
-    })
-  }
+  var orderBys = $.map(uniqueKey + [pointColumn], sqlEscape).join(", ")
+  // Error callback.
   var gotError = function(){
     $('#loading, #overlay').fadeOut()
     scraperwiki.alert('An unexpected error occurred', 'scraperwiki.sql() failed', 1)
@@ -152,7 +150,10 @@ function showPolygons(geoTable) {
   }
   scraperwiki.sql('SELECT * FROM ' + sqlEscape(table) +
     ' WHERE ' + isNotNulls +
-    ' ORDER BY ' + orderBys, gotPolys, gotError)
+    ' ORDER BY ' + orderBys,
+    function(data) {
+      return showPolygonsOnMap(geoTable, data)},
+    gotError)
 }
 
 
