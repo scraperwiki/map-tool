@@ -21,11 +21,13 @@ Array.prototype.toLowerCase = function(){
 
 function sqlEscape(str, literal) {
   if(literal){
-    quote = "'" // set literal to true for strings you're inserting into a table
+    // Set literal to true for strings you're inserting into a table.
+    quote = "'"
     singleQuote = "''"
     doubleQuote = '"'
   } else {
-    quote = '"' // set literal to false for column and table names
+    // Set literal to false for column and table names.
+    quote = '"'
     singleQuote = "'"
     doubleQuote = '""'
   }
@@ -45,7 +47,8 @@ function detectColumns(){
   scraperwiki.sql.meta(function(meta){
     if(meta.table.length == 0){
       $('#loading, #overlay').fadeOut()
-      scraperwiki.alert('This dataset is empty', 'Try running this tool again once you&rsquo;ve got some data.')
+      scraperwiki.alert('This dataset is empty',
+        'Try running this tool again once you&rsquo;ve got some data.')
       return false
     }
 
